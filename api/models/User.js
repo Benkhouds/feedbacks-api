@@ -35,6 +35,10 @@ const userSchema = new mongoose.Schema({
   },
   resetPasswordToken: String,
   resetPasswordExpires: Date,
+  tokenVersion:{
+    type:Number,
+    default:0
+  }
 });
 
 userSchema.pre("save", async function (next) {
@@ -51,12 +55,12 @@ userSchema.methods.matchPassword = async function (password) {
 
 userSchema.methods.createAccessToken = function () {
   return jwt.sign({ id : this._id}, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: "15min",
+    expiresIn: "15m",
   });
 };
 
 userSchema.methods.createRefreshToken = function () {
-  return jwt.sign({ id:this._id }, process.env.REFRESH_TOKEN_SECRET, {
+  return jwt.sign({ id:this._id, version:this.tokenVersion }, process.env.REFRESH_TOKEN_SECRET, {
     expiresIn: "7d",
   });
 };

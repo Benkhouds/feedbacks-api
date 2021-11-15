@@ -9,4 +9,6 @@ router.route('/forgot-password').post(AuthController.forgotPassword)
 router.route('/reset-password/:resetToken').put(AuthController.resetPassword)
 router.route('/logout').post(authenticateUser, AuthController.logout)
 router.route('/refresh-token').post(AuthController.getRefreshToken);
+//TODO: adding moderator middleware 
+router.route('/revoke-token').post(AuthController.revokeRefreshToken)
 export default router

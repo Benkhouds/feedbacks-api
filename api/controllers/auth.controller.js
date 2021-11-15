@@ -7,8 +7,7 @@ import jwt from "jsonwebtoken";
 
 export default class AuthController {
 
-  
-
+  //sending new refresh and accessToken
   static  async getRefreshToken(req,res, next)
   {
     const token = req.cookies.jid;
@@ -29,10 +28,30 @@ export default class AuthController {
     if (!user) {
       return next(new ErrorResponse('Error authenticating', 401))
     }
+    if(user.tokenVersion !== payload.version){
+      return next(new ErrorResponse('Error authenticating', 401))
+    }
 
     sendRefreshToken(res, user.createRefreshToken());
 
     sendAccessToken(res, user)
+  }
+  //revoking the refresh token (if account is hacked)
+
+  static async revokeRefreshToken(req, res, next){
+    try {
+      const id = req.id ;
+      const user  = await User.findByIdAndUpdate(id, {$inc :{tokenVersion : 1}}, {new:true})
+      /**TODO: adding roles to user and only moderators can revoke the refresh tokens */
+      if(user){
+        res.status(200).send({success:true})
+      }else{
+        return next(new ErrorResponse("Forbidden action",403))
+      }
+      
+    } catch (err) {
+      next(err)
+    }
   }
 
   static async register(req, res, next) {

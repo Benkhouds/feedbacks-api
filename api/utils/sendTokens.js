@@ -7,7 +7,7 @@ const sendRefreshToken = (res, token) => {
    });
 };
 const sendAccessToken = (res, user) => {
-   const token = user.createAccessToken(user._id);
+   const token = user.createAccessToken();
     const data = {firstName : user.firstName , lastName:user.lastName , username: user.username , accessToken: token}
    res.status(200).json({success:true , user:data})
 };
