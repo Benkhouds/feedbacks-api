@@ -18,7 +18,8 @@ const commentSchema = new mongoose.Schema({
 
 
 commentSchema.pre('find',function(next){
-  this.populate('author', 'username firstName lastName -_id');
+  this.populate('author', 'username firstName lastName -_id') 
+      .populate('comments')
   next()
 })
 const Comment =  mongoose.model('Comment', commentSchema);
