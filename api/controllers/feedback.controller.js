@@ -1,7 +1,8 @@
 import ErrorResponse from "../utils/errorResponse.js";
 import Feedback from "../models/Feedback.js";
 import Comment from "../models/Comment.js";
-
+import feedbacksWithLikeStatus from '../utils/feedbacksWithLikeStatus.js';
+import mongoose from 'mongoose'
 export default class FeedbackController {
   
   static async getAllFeedbacks(req, res, next) {
@@ -11,15 +12,7 @@ export default class FeedbackController {
      try {
       let feedbacks = await Feedback.find({status:'suggestion' ,...category}).sort(sortBy).lean();
       
-      
-      const checkEquality = (arr) => arr.some((a)=>a.equals(req.user?._id ||''))
-      feedbacks =feedbacks.map((feedback)=>{
-
-        if(req.user && checkEquality(feedback.upVotes)){
-          return {...feedback,  liked:true}
-        }
-        return {...feedback, liked:false}
-      })
+      feedbacks = feedbacksWithLikeStatus(feedbacks, req.user?.id || '')
       
   
       console.log(feedbacks)
@@ -29,11 +22,58 @@ export default class FeedbackController {
     }
   }
   
+
+
   static async getApprovedFeedbacks(req, res, next){
 
     try {
-      let feedbacks = await Feedback.find({status: { $ne:'suggestion'} }).sort('-createdAt').lean();
-      res.status(200).json({ success: true, feedbacks , total_results:feedbacks.length });
+      let id = req.user?._id ? mongoose.Types.ObjectId(req.user._id) : '' 
+      //query to get all feedbacks where status is not suggestion
+      //and then figuring out if the user has liked the feedback
+      //and finally returning all groups of feedbacks (by status)
+      const [data] = await Feedback.aggregate([
+        {
+          $match:{
+            status : {$ne: 'suggestion'}
+          },
+        },
+        {  
+          $unwind: {
+            path: "$upVotes",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+       {
+        $project: {
+          _id: 1,
+          author: 1,
+          title: 1,
+          details: 1,
+          category: 1,
+          status: 1,
+          voteScore: 1,
+          commentsCount: 1,
+          upVotes: 1,
+          liked: {
+            $cond: {
+              if: {
+                $eq: ["$upVotes", id],
+              },
+              then: 1,
+              else: 0,
+            },
+          },
+        },
+      },
+      {
+          $facet:{
+          'live': [{$match : {status : 'live'}}],
+          'planned': [{$match : {status : 'planned'}}],
+          'inProgress': [{$match : {status : 'inprogress'}}],
+        }
+       }]).exec()
+        
+     res.status(200).json({ success: true, feedbacks : {live: data.live, planned :  data.planned, inProgress:data.inProgress} }); 
     } catch (err) {
       next(err);
     }
@@ -165,6 +205,20 @@ export default class FeedbackController {
       next(err);
     }
   }
-
+  
+  static async expriment(req, res, next){
+    
+    const  sortBy = req.query.sort ? req.query.sort :'-createdAt' //object with -1 or  1
+    const category = req.query.category ? { category : req.query.category} :{} ;
+    try {
+     let feedbacks = await Feedback.aggregate(feedbacksPipeline())
+           .append({$match:{status:'suggestion' ,...category}}, {$sort:sortBy})
+           .exec()
+     
+     res.status(200).json({ success: true, feedbacks, total_results:feedbacks.length });
+   } catch (err) {
+     next(err);
+   }
+  }
 
 }

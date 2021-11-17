@@ -7,7 +7,6 @@ import feedbackRouter from './api/routes/feedback.route.js'
 import userRouter from './api/routes/user.route.js'
 import corsMiddleware from './api/middleware/cors.js'
 import { errorHandler } from './api/middleware/errorHandler.js'
-
 //environment variables
 dotenv.config()
 //connecting to Database
@@ -46,3 +45,5 @@ process.on('unhandledRejection',(err, promise)=>{
 process.on('uncaughtException', (err)=>{
     console.log(err)
 })
+
+
