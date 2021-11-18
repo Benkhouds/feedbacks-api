@@ -3,6 +3,8 @@ import Feedback from "../models/Feedback.js";
 import Comment from "../models/Comment.js";
 import feedbacksWithLikeStatus from '../utils/feedbacksWithLikeStatus.js';
 import mongoose from 'mongoose'
+
+
 export default class FeedbackController {
   
   static async getAllFeedbacks(req, res, next) {
@@ -37,12 +39,6 @@ export default class FeedbackController {
             status : {$ne: 'suggestion'}
           },
         },
-        {  
-          $unwind: {
-            path: "$upVotes",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
        {
         $project: {
           _id: 1,
@@ -53,11 +49,10 @@ export default class FeedbackController {
           status: 1,
           voteScore: 1,
           commentsCount: 1,
-          upVotes: 1,
           liked: {
             $cond: {
               if: {
-                $eq: ["$upVotes", id],
+                $ne: [{$indexOfArray:["$upVotes", id]}, -1],
               },
               then: 1,
               else: 0,
@@ -70,10 +65,10 @@ export default class FeedbackController {
           'live': [{$match : {status : 'live'}}],
           'planned': [{$match : {status : 'planned'}}],
           'inProgress': [{$match : {status : 'inprogress'}}],
-        }
+        } 
        }]).exec()
         
-     res.status(200).json({ success: true, feedbacks : {live: data.live, planned :  data.planned, inProgress:data.inProgress} }); 
+     res.status(200).json({ success: true, feedbacks :{live: data.live, planned :  data.planned, inProgress:data.inProgress}  }); 
     } catch (err) {
       next(err);
     }
