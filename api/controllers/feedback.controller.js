@@ -2,6 +2,7 @@ import ErrorResponse from "../utils/errorResponse.js";
 import Feedback from "../models/Feedback.js";
 import Comment from "../models/Comment.js";
 import feedbacksWithLikeStatus from '../utils/feedbacksWithLikeStatus.js';
+import {feedbackPipeline, approvedFeedbacksPipeline} from '../utils/pipelines.js'
 import mongoose from 'mongoose'
 
 
@@ -30,43 +31,8 @@ export default class FeedbackController {
 
     try {
       let id = req.user?._id ? mongoose.Types.ObjectId(req.user._id) : '' 
-      //query to get all feedbacks where status is not suggestion
-      //and then figuring out if the user has liked the feedback
-      //and finally returning all groups of feedbacks (by status)
-      const [data] = await Feedback.aggregate([
-        {
-          $match:{
-            status : {$ne: 'suggestion'}
-          },
-        },
-       {
-        $project: {
-          _id: 1,
-          author: 1,
-          title: 1,
-          details: 1,
-          category: 1,
-          status: 1,
-          voteScore: 1,
-          commentsCount: 1,
-          liked: {
-            $cond: {
-              if: {
-                $ne: [{$indexOfArray:["$upVotes", id]}, -1],
-              },
-              then: 1,
-              else: 0,
-            },
-          },
-        },
-      },
-      {
-          $facet:{
-          'live': [{$match : {status : 'live'}}],
-          'planned': [{$match : {status : 'planned'}}],
-          'inProgress': [{$match : {status : 'inprogress'}}],
-        } 
-       }]).exec()
+
+      const [data] = await Feedback.aggregate(approvedFeedbacksPipeline(id)).exec()
         
      res.status(200).json({ success: true, feedbacks :{live: data.live, planned :  data.planned, inProgress:data.inProgress}  }); 
     } catch (err) {
@@ -121,8 +87,9 @@ export default class FeedbackController {
   }
   static async getFeedback(req, res, next) {
     try {
-      const id = req.params.id;
-      const feedback = await Feedback.findById(id).lean();
+      const feedbackId = req.params.id ? mongoose.Types.ObjectId(req.params.id) : '';
+      const userId = mongoose.Types.ObjectId(req.user._id);
+      const feedback = await Feedback.aggregate(feedbackPipeline(feedbackId, userId)).exec(); 
       res.status(200).json({ success: true, feedback });
     } catch (err) {
       next(err);
