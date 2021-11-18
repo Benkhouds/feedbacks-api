@@ -9,10 +9,20 @@ const feedbackPipeline =(feedbackId, userId)=>{
           _id : feedbackId
      }
   },
+  { 
+    $lookup :{
+      from: "users",
+      localField: "author",
+      foreignField: '_id',
+      as : 'author'
+    }
+  },
   {
     $project: {
       _id: 1,
-      author: 1,
+      "author.username": 1,
+      "author.lastName": 1,
+      "author.firstName": 1,
       title: 1,
       details: 1,
       category: 1,
@@ -31,6 +41,7 @@ const feedbackPipeline =(feedbackId, userId)=>{
       },
     },
   },
+ 
  ]).pipeline()
 
 }
