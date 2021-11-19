@@ -16,12 +16,23 @@ const commentSchema = new mongoose.Schema({
 
 },{timestamps:true})
 
-
-commentSchema.pre('find',function(next){
-  this.populate('author', 'username firstName lastName -_id') 
-      .populate('comments')
+const middleware = function(next){
+  console.log('in')
+  this.populate('author', 'username firstName lastName -_id').populate('comments');
   next()
-})
+}
+
+
+
+
+commentSchema.pre('findOneAndUpdate', middleware)
+
+commentSchema.pre('findOne',middleware)
+
+commentSchema.pre('find',middleware)
+
+
+
 const Comment =  mongoose.model('Comment', commentSchema);
 
 export default Comment

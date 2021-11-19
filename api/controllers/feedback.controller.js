@@ -36,16 +36,14 @@ export default class FeedbackController {
         approvedFeedbacksPipeline(id)
       ).exec();
 
-      res
-        .status(200)
-        .json({
-          success: true,
-          feedbacks: {
-            live: data.live,
-            planned: data.planned,
-            inProgress: data.inProgress,
-          },
-        });
+      res.status(200).json({
+        success: true,
+        feedbacks: {
+          live: data.live,
+          planned: data.planned,
+          inProgress: data.inProgress,
+        },
+      });
     } catch (err) {
       next(err);
     }
@@ -99,12 +97,13 @@ export default class FeedbackController {
         ? mongoose.Types.ObjectId(req.params.id)
         : "";
       const userId = mongoose.Types.ObjectId(req.user._id);
-      const [feedback] = await Feedback.aggregate(
+      const aggregate = await Feedback.aggregate(
         feedbackPipeline(feedbackId, userId)
-      ).exec();
+      );
+      const [feedback] = await Feedback.populate(aggregate, { path: "comments" });
       res.status(200).json({
         success: true,
-        feedback : {...feedback , author : feedback.author[0]}
+        feedback  : {...feedback , author : feedback.author[0]} ,
       });
     } catch (err) {
       next(err);
@@ -144,18 +143,17 @@ export default class FeedbackController {
     try {
       const id = req.params.id;
       const { content } = req.body;
-      const comment = await Comment.create({ content, author: req.user._id });
+      let comment = await Comment.create({ content, author: req.user._id });
       const feedback = await Feedback.findByIdAndUpdate(
         id,
         {
           $push: { comments: { $each: [comment._id], $position: 0 } },
           $inc: { commentsCount: 1 },
         },
-        { new: true }
+        { new: true, runValidators: true }
       );
-      console.log(feedback);
 
-      res.status(201).json({ success: true, comment });
+      res.status(201).json({ success: true, comment , commentsCount: feedback.commentsCount});
     } catch (err) {
       next(err);
     }
@@ -164,7 +162,15 @@ export default class FeedbackController {
     try {
       const { postId, commentId } = req.params;
       const { content } = req.body;
-      const post = await Feedback.findById(postId);
+      console.log(content)
+      const post = await Feedback.findOneAndUpdate(
+        {_id:postId},
+        {
+          $inc: { commentsCount: 1 },
+        },
+        { new: true }
+      );
+
       if (post) {
         const reply = await Comment.create({ content, author: req.user._id });
         const newComment = await Comment.findByIdAndUpdate(
@@ -173,12 +179,18 @@ export default class FeedbackController {
             $push: {
               comments: { $each: [reply._id], $position: 0 },
             },
-            $inc: { commentsCount: 1 },
           },
           { new: true }
         );
+        console.log(newComment)
+        res
+          .status(201)
+          .json({
+            success: true,
+            comment: newComment,
+            commentsCount: post.commentsCount,
+          });
 
-        res.status(201).json({ success: true, comment: newComment });
       } else {
         return next(new ErrorResponse("Feedback not found", 404));
       }

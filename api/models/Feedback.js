@@ -47,15 +47,6 @@ const feedbackSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-feedbackSchema.pre("findOne", function (next) {
-  this.populate("author", "firstName lastName username -_id").populate('comments');
-  next();
-});
-
-feedbackSchema.pre("find", function (next) {
-  this.populate("author", "username -_id");
-  next();
-});
 
 
 
