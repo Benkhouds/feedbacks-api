@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import ErrorResponse from '../utils/errorResponse.js';
 import Feedback from '../models/Feedback.js';
 import Comment from '../models/Comment.js';
@@ -8,7 +9,6 @@ import {
 } from '../utils/pipelines.js';
 
 import { formatSort } from '../helpers/formatQueries.js';
-import mongoose from 'mongoose';
 
 export default class FeedbackController {
    static async getAllFeedbacks(req, res, next) {
