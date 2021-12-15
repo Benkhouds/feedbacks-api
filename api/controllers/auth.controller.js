@@ -110,7 +110,7 @@ export default class AuthController {
       }
       const resetToken = user.getResetPasswordToken();
       await user.save();
-      const resetUrl = `${process.env.DOMAIN_NAME}/auth/resetpassword/${resetToken}`;
+      const resetUrl = `${process.env.DOMAIN_NAME}/auth/reset-password/${resetToken}`;
       try {
         await SendMail.sendResetPasswordEmail(user.email, resetUrl, next);
         res.status(200).json({ success: true, message: "Email Sent" });
