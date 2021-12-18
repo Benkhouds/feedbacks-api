@@ -110,7 +110,6 @@ const reusablePipeline = (userId, match, sort, ops) => {
    const res = sort
       ? [match, sort].concat(pipelineArray)
       : [match].concat(pipelineArray);
-   console.log(res);
 
    return Feedback.aggregate(res).pipeline();
 };
