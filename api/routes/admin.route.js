@@ -5,4 +5,4 @@ const router = Router();
 //admin specific routes
 
 router.post('/admin/approve-suggestion', authenticate('admin'));
-router.route('/admin/:userId').all(authenticate('admin')).post().delete();
+/* router.route('/admin/:userId').all(authenticate('admin')).post().delete(); */
