@@ -34,25 +34,6 @@ export default class AuthController {
 
     sendAccessToken(res, user);
   }
-  //revoking the refresh token (if account is hacked)
-
-  static async revokeRefreshToken(req, res, next) {
-    try {
-      const id = req.id;
-      const user = await User.findByIdAndUpdate(
-        id,
-        { $inc: { tokenVersion: 1 } },
-        { new: true }
-      );
-      if (user) {
-        res.status(200).send({ success: true });
-      } else {
-        return next(new ErrorResponse('Forbidden action', 403));
-      }
-    } catch (err) {
-      next(err);
-    }
-  }
 
   static async register(req, res, next) {
     const { firstName, lastName, username, email, password } = req.body;

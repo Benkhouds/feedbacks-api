@@ -10,7 +10,4 @@ router.route('/reset-password/:resetToken').put(AuthController.resetPassword);
 router.route('/logout').post(authenticate(), AuthController.logout);
 router.route('/refresh-token').post(AuthController.getRefreshToken);
 
-router
-  .route('/revoke-token')
-  .post(authenticate('admin'), AuthController.revokeRefreshToken);
 export default router;
